@@ -1,0 +1,61 @@
+name: Cinematic Chaos Upgrade
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cinematic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upgrade cinematic sequence
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Keep red and white flashes physically separate and never simultaneous.
+          s = s.replace('.whiteFlash{position:fixed;inset:0;z-index:101;background:#fff;opacity:0;pointer-events:none;mix-blend-mode:screen}.whiteFlash.on{animation:whiteFlash .11s}', '.whiteFlash{position:fixed;inset:0;z-index:101;background:#fff;opacity:0;pointer-events:none}.whiteFlash.on{animation:whiteFlash .065s linear}')
+          s = s.replace("function flashNow(white=true){flash.classList.remove('on');void flash.offsetWidth;flash.classList.add('on');if(white&&Math.random()>.22){whiteFlash.classList.remove('on');void whiteFlash.offsetWidth;whiteFlash.classList.add('on')}}", "function redHit(){whiteFlash.classList.remove('on');flash.classList.remove('on');void flash.offsetWidth;flash.classList.add('on')}function whiteHit(){flash.classList.remove('on');whiteFlash.classList.remove('on');void whiteFlash.offsetWidth;whiteFlash.classList.add('on')}function flashNow(){redHit()}")
+
+          # Add cinematic HUD overlays and escalation nodes.
+          marker = '<div class="grid"></div><div class="scan"></div>'
+          inject = '''<div class="grid"></div><div class="scan"></div><div class="panicHud" id="panicHud"><span id="panicLabel">EMERGENCY STATE</span><b id="panicSignal">SIGNAL: 100%</b><b id="panicEvac">EVACUATION WINDOW: OPEN</b></div><div class="redAlert" id="redAlert">⚠ TERMINAL EVENT DETECTED</div>'''
+          s = s.replace(marker, inject, 1)
+          s = s.replace('.panicMode{animation:panicShake .12s infinite!important}', '.panicMode{animation:panicShake .12s infinite!important}.panicHud{position:fixed;left:10px;right:10px;top:10px;z-index:30;display:flex;justify-content:space-between;gap:8px;font:7px monospace;letter-spacing:.16em;color:#ff7b84;pointer-events:none;opacity:.7}.redAlert{position:fixed;left:50%;top:18%;transform:translate(-50%,-50%) scale(.7);z-index:104;color:#fff;background:#b30016;padding:10px 18px;font:900 11px monospace;letter-spacing:.2em;opacity:0;pointer-events:none}.redAlert.on{animation:alertBurst .5s ease-out}.cinematicGlitch{animation:cinematicGlitch .16s infinite!important}.worldFail{filter:contrast(1.35) saturate(1.35) brightness(.75)}@keyframes alertBurst{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}@keyframes cinematicGlitch{0%,100%{transform:none}20%{transform:translate(6px,-3px) skewX(2deg)}40%{transform:translate(-5px,4px)}60%{transform:translate(3px,1px) skewX(-1deg)}80%{transform:translate(-2px,-2px)}}')
+
+          s = s.replace("const flash=$('flash'),whiteFlash=$('whiteFlash'),impact=", "const flash=$('flash'),whiteFlash=$('whiteFlash'),panicHud=$('panicHud'),panicSignal=$('panicSignal'),panicEvac=$('panicEvac'),redAlert=$('redAlert'),impact=")
+          s = s.replace("function shake(strong=false){", "function panicAlert(text='⚠ TERMINAL EVENT DETECTED'){redAlert.textContent=text;redAlert.classList.remove('on');void redAlert.offsetWidth;redAlert.classList.add('on')}function shake(strong=false){")
+
+          # Make the existing countdown progressively more frantic without rewriting the whole application.
+          needle = "let panicDelay=620;count.classList.add('panicText');"
+          replacement = "let panicDelay=520;count.classList.add('panicText');document.body.classList.add('cinematicGlitch');panicAlert('⚠ COUNTDOWN ACTIVE // SEEK SHELTER');rumble(1.5,.18);"
+          s = s.replace(needle, replacement)
+
+          # Replace mixed flash calls inside the panic loop with alternating, mutually-exclusive hits.
+          s = s.replace("if(n%2===0){flashNow();await sleep(45);whiteHit()}else{whiteHit();await sleep(35);flashNow()}", "if(n%2===0){redHit();await sleep(110)}else{whiteHit();await sleep(90)}")
+          s = s.replace("if(n<=5){tone(48,.24,'sawtooth',.18);whiteHit();flashNow();panicShake(260)}", "if(n<=5){tone(48,.24,'sawtooth',.18);panicAlert(n<=2?'⚠ IMPACT IMMINENT':'⚠ CIVIL DEFENSE FAILURE');if(n%2){redHit()}else{whiteHit()}panicShake(300)}")
+          s = s.replace("if(n<=3){tone(28,.3,'sine',.22);whiteHit();await sleep(55);flashNow();panicShake(320)}", "if(n<=3){tone(28,.3,'sine',.22);panicAlert(n===1?'⚠ FINAL SECONDS // SAVE YOUR LIFE':'⚠ TERMINAL CASCADE');if(n===2){whiteHit();await sleep(120);redHit()}else{redHit();await sleep(130);whiteHit()}panicShake(420)}")
+          s = s.replace("await sleep(panicDelay);panicDelay=Math.max(190,panicDelay-55)", "panicSignal.textContent='SIGNAL: '+Math.max(3,Math.round((n-1)*8.3))+'%';panicEvac.textContent=n>5?'EVACUATION WINDOW: CLOSING':n>2?'EVACUATION WINDOW: CRITICAL':'EVACUATION WINDOW: EXPIRED';await sleep(panicDelay);panicDelay=Math.max(155,panicDelay-60)")
+          s = s.replace("count.classList.remove('panicText');panicShake(500);whiteHit();flashNow();rumble(2.8,.3)", "count.classList.remove('panicText');document.body.classList.remove('cinematicGlitch');panicAlert('⚠ TERMINAL COMMAND EXECUTED');panicShake(650);whiteHit();await sleep(150);redHit();rumble(3.2,.36)")
+
+          # Add a short cinematic collapse between command completion and the strike map.
+          s = s.replace("await sleep(300);whiteHit();await sleep(70);flashNow();panicShake(650);tone(24,.65,'sine',.26);rumble(2.5,.34);impact.classList.remove('hidden');", "await sleep(280);panicAlert('⚠ GLOBAL CASCADE INITIATED');whiteHit();await sleep(160);redHit();await sleep(180);panicAlert('⚠ NETWORK FAILURE // MULTIPLE NODES LOST');panicShake(800);tone(24,.65,'sine',.26);rumble(2.8,.38);impact.classList.remove('hidden');")
+
+          # Add more narrative stages to the existing strike progression.
+          s = s.replace("impactTitle.textContent='STRIKE SEQUENCE INITIATED';impactStatus.textContent='TARGETING NETWORK LOCKED';", "impactTitle.textContent='STRIKE SEQUENCE INITIATED';impactStatus.textContent='TARGETING NETWORK LOCKED';panicAlert('⚠ INBOUND EVENT // NO ABORT');")
+          s = s.replace("impactStatus.textContent='CASCADE EVENT // INFRASTRUCTURE COLLAPSE';impactTitle.textContent='SERVER NETWORK DESTROYED';", "impactStatus.textContent='CASCADE EVENT // INFRASTRUCTURE COLLAPSE';impactTitle.textContent='SERVER NETWORK DESTROYED';panicAlert('⚠ PRIMARY NETWORK LOST');")
+          s = s.replace("await sleep(3000);impactTitle.textContent='GLOBAL INFRASTRUCTURE FAILURE';", "await sleep(2400);panicAlert('⚠ BACKUP CHANNELS FAILING');impactTitle.textContent='GLOBAL INFRASTRUCTURE FAILURE';")
+
+          p.write_text(s, encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Make cinematic panic escalation more intense'
+          git push
