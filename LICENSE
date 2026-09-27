@@ -1,0 +1,60 @@
+DEADMAN'S HAND — DMJ RESTRICTED SOFTWARE LICENSE
+Version 1.0 — September 2026
+
+Copyright (c) 2026 Durvesh Jadhav / DMJ Group
+
+1. GRANT
+Permission is granted to view, study, and run this software for personal,
+educational, research, demonstration, and non-commercial purposes, subject to
+the conditions below.
+
+2. CONDITIONS
+You may:
+- inspect and study the source code;
+- fork the repository for personal or educational experimentation;
+- run the software in isolated, non-production environments;
+- modify the software for personal, educational, or research use.
+
+You may not, without prior written permission from the copyright holder:
+- use this software or substantial portions of it as part of a commercial
+  product or paid service;
+- sell, sublicense, or redistribute the software as a commercial component;
+- remove copyright, attribution, or license notices;
+- represent modified versions as official DMJ Group software;
+- connect the control framework to systems you do not own or have explicit
+  authorization to control;
+- use the project to cause unauthorized disruption, destruction, or denial of
+  service against any system.
+
+3. DERIVATIVE WORKS
+Personal and educational modifications are permitted. Public redistribution
+of substantial modified versions requires prior written permission unless a
+separate license is granted by the copyright holder.
+
+4. NO WARRANTY
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+5. LIMITATION OF LIABILITY
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE COPYRIGHT HOLDER SHALL NOT BE
+LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF,
+INABILITY TO USE, OR MODIFICATION OF THIS SOFTWARE.
+
+6. AUTHORIZED USE
+Any future integration capable of controlling an external system must only be
+used against systems owned by the operator or where explicit authorization has
+been obtained from the system owner.
+
+7. TERMINATION
+This license terminates automatically if the recipient materially violates
+its terms. Sections concerning copyright, warranty, liability, and authorized
+use survive termination.
+
+8. CONTACT
+For commercial licensing or written permission, contact the copyright holder
+through the official DMJ Group channels.
+
+"DEADMAN'S HAND" and associated visual identity may be trademarks or
+unregistered marks of their respective owner and are not granted under this
+license.
