@@ -1,0 +1,50 @@
+name: Fear Panic Cinematic Upgrade
+
+on:
+  push:
+    paths-ignore:
+      - '.github/workflows/fear-panic-upgrade.yml'
+      - '.github/workflows/panic-upgrade.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add rapid panic and emergency effects
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+
+          # Separate white impact frames: independent, very short flashes rather than a layer over red.
+          s=s.replace('<div class="flash" id="flash"></div>', '<div class="flash" id="flash"></div><div class="whiteFlash" id="whiteFlash"></div>')
+          s=s.replace('.flash{z-index:100;background:#ff1028;opacity:0;mix-blend-mode:screen}.flash.on{animation:flash .22s}', '.flash{z-index:100;background:#ff1028;opacity:0;mix-blend-mode:screen}.flash.on{animation:flash .22s}.whiteFlash{position:fixed;inset:0;z-index:102;background:#fff;opacity:0;pointer-events:none}.whiteFlash.on{animation:whiteHit .075s linear}.panicText{animation:panicText .18s infinite!important}.panicShake{animation:panicShake .075s infinite!important}')
+          s=s.replace('@keyframes flash{0%{opacity:.8}18%{opacity:.9}100%{opacity:0}}', '@keyframes flash{0%{opacity:.8}18%{opacity:.9}100%{opacity:0}}@keyframes whiteHit{0%{opacity:1}100%{opacity:0}}@keyframes panicText{50%{transform:translateX(2px);filter:brightness(1.8)}}@keyframes panicShake{0%,100%{transform:translate(0,0)}25%{transform:translate(5px,-3px)}50%{transform:translate(-6px,4px)}75%{transform:translate(3px,5px)}}')
+
+          s=s.replace("const flash=$('flash'),impact=", "const flash=$('flash'),whiteFlash=$('whiteFlash'),impact=")
+          s=s.replace("function flashNow(){flash.classList.remove('on');void flash.offsetWidth;flash.classList.add('on')}", "function flashNow(){flash.classList.remove('on');void flash.offsetWidth;flash.classList.add('on')}function whiteHit(){whiteFlash.classList.remove('on');void whiteFlash.offsetWidth;whiteFlash.classList.add('on')}function panicShake(ms=180){document.body.classList.add('panicShake');setTimeout(()=>document.body.classList.remove('panicShake'),ms)}")
+
+          old="let panicDelay=760;for(let n=12;n>=1;n--){count.textContent='T - '+String(n).padStart(2,'0');progress.style.width=((12-n)/11*100)+'%';planet.textContent=n>9?'DETERIORATING':n>6?'CRITICAL':n>3?'CATASTROPHIC':'TERMINAL';const urgency=(13-n)/12;siren();tone(300+urgency*420,Math.max(.11,panicDelay/1800),'sine',.075+urgency*.055);rumble(Math.max(.18,panicDelay/900),.09+urgency*.16);flashNow(true);shake(n<=9);if(n<=8){tone(70,Math.max(.12,panicDelay/1600),'sawtooth',.10+urgency*.10);if(n%2===0)flashNow(true)}if(n<=5){tone(42,.22,'sawtooth',.16);shake(true);flashNow(true)}if(n<=3){tone(31,.28,'sine',.20);shake(true);flashNow(true);await sleep(80)}await sleep(panicDelay);panicDelay=Math.max(260,panicDelay-48)}"
+          new="let panicDelay=620;count.classList.add('panicText');for(let n=12;n>=1;n--){count.textContent='T - '+String(n).padStart(2,'0');progress.style.width=((12-n)/11*100)+'%';planet.textContent=n>9?'DETERIORATING':n>6?'CRITICAL':n>3?'CATASTROPHIC':'TERMINAL';const urgency=(13-n)/12;siren();tone(300+urgency*560,Math.max(.09,panicDelay/1900),'sawtooth',.085+urgency*.075);rumble(Math.max(.16,panicDelay/900),.11+urgency*.18);panicShake(140+urgency*180);if(n%2===0){flashNow();await sleep(45);whiteHit()}else{whiteHit();await sleep(35);flashNow()}if(n<=8){tone(82,Math.max(.10,panicDelay/1700),'square',.10+urgency*.12);panicShake(180)}if(n<=5){tone(48,.24,'sawtooth',.18);whiteHit();flashNow();panicShake(260)}if(n<=3){tone(28,.3,'sine',.22);whiteHit();await sleep(55);flashNow();panicShake(320)}await sleep(panicDelay);panicDelay=Math.max(190,panicDelay-55)}count.classList.remove('panicText');panicShake(500);whiteHit();flashNow();rumble(2.8,.3)"
+          if old not in s:
+            raise SystemExit('expected panic countdown block not found')
+          s=s.replace(old,new)
+
+          # Add a faster emergency transition immediately after completion.
+          s=s.replace("await sleep(650);flashNow(true);shake(true);tone(28,.5,'sine',.22);impact.classList.remove('hidden');", "await sleep(300);whiteHit();await sleep(70);flashNow();panicShake(650);tone(24,.65,'sine',.26);rumble(2.5,.34);impact.classList.remove('hidden');")
+
+          # Make the opening strike screen feel like an emergency rather than a calm title card.
+          s=s.replace("impactTitle.textContent='STRIKE SEQUENCE INITIATED';impactStatus.textContent='TARGETING NETWORK LOCKED';", "impactTitle.textContent='STRIKE SEQUENCE INITIATED';impactStatus.textContent='WARNING // IMPACT WINDOW OPEN';whiteHit();panicShake(500);siren();rumble(1.8,.28);")
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then echo 'No changes'; else git commit -m 'Make countdown frantic and frightening'; git push; fi
