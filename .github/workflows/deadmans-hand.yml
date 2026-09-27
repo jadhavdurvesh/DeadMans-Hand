@@ -1,0 +1,118 @@
+name: DEADMAN'S HAND
+
+on:
+  workflow_dispatch:
+    inputs:
+      challenge_1:
+        description: 'Authorization Challenge I'
+        required: true
+        type: string
+      challenge_2:
+        description: 'Authorization Challenge II'
+        required: true
+        type: string
+      challenge_3:
+        description: 'Authorization Challenge III'
+        required: true
+        type: string
+      final_confirmation:
+        description: 'Type I UNDERSTAND THE CONSEQUENCES'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deadmans-hand:
+    name: Authorization & Control Sequence
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Initialize control system
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '============================================================'
+          echo "          DEADMAN'S HAND // CONTROL SYSTEM"
+          echo '          DMJ GROUP // RESTRICTED AUTHORIZATION'
+          echo '============================================================'
+          echo '[DMH-001] Initializing secure execution environment...'
+          sleep 1
+          echo '[DMH-014] Loading authorization matrix............... OK'
+          echo '[DMH-019] Establishing operator session.............. OK'
+
+      - name: Verify authorization challenges
+        env:
+          Q1_HASH: ${{ secrets.DMH_Q1_HASH }}
+          Q2_HASH: ${{ secrets.DMH_Q2_HASH }}
+          Q3_HASH: ${{ secrets.DMH_Q3_HASH }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          verify() {
+            local supplied="$1"
+            local expected="$2"
+            local actual
+            actual="$(printf '%s' "$supplied" | sha256sum | cut -d ' ' -f1)"
+            [[ -n "$expected" && "$actual" == "$expected" ]]
+          }
+
+          echo '[DMH-027] Verifying authorization challenge I...'
+          verify '${{ inputs.challenge_1 }}' "$Q1_HASH"
+          echo '[DMH-028] Challenge I accepted.'
+
+          echo '[DMH-031] Verifying authorization challenge II...'
+          verify '${{ inputs.challenge_2 }}' "$Q2_HASH"
+          echo '[DMH-032] Challenge II accepted.'
+
+          echo '[DMH-035] Verifying authorization challenge III...'
+          verify '${{ inputs.challenge_3 }}' "$Q3_HASH"
+          echo '[DMH-036] Challenge III accepted.'
+          echo '[DMH-042] Operator authorization confirmed.'
+
+      - name: Final authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ '${{ inputs.final_confirmation }}' != 'I UNDERSTAND THE CONSEQUENCES' ]]; then
+            echo '[DMH-051] FINAL AUTHORIZATION REJECTED.'
+            exit 1
+          fi
+          echo '[DMH-051] Final authorization accepted.'
+          echo '[DMH-052] Safety interlock released.'
+
+      - name: Execute control sequence
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo ''
+          echo '############################################################'
+          echo '#                                                          #'
+          echo "#                 DEADMAN'S HAND                         #"
+          echo '#                 AUTHORIZED                              #'
+          echo '#                                                          #'
+          echo '############################################################'
+          echo ''
+          echo '[DMH-060] Preparing execution sequence................ OK'
+          sleep 1
+          echo '[DMH-061] Establishing control channel................ OK'
+          sleep 1
+          echo '[DMH-062] Loading command sequence.................... OK'
+          sleep 1
+          echo '[DMH-063] Final interlock.............................. OK'
+          sleep 1
+          for n in 10 9 8 7 6 5 4 3 2 1; do
+            echo "                     T - $n"
+            sleep 1
+          done
+          echo ''
+          echo '[DMH-099] EXECUTION SEQUENCE COMPLETE.'
+          echo '[DMH-100] Control sequence terminated.'
+          echo ''
+          echo '============================================================'
+          echo " DEADMAN'S HAND // SESSION COMPLETE"
+          echo '============================================================'
+          echo '[DMH-101] Maintain AI control channel: READY FOR FUTURE LINK.'
+          echo '[DMH-102] No external target command issued by this workflow.'
