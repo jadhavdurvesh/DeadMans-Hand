@@ -1,62 +1,85 @@
 # DEADMAN'S HAND
 
-### DMJ Group — Restricted Control Framework
+### DMJ Group — OMEGA Emergency Control System
 
-> **DEADMAN'S HAND** is a controlled authorization and emergency-control framework designed around manual operator verification, explicit authorization, auditable execution, and isolated target adapters.
+> **DEADMAN'S HAND** is a privileged operator-control framework designed for emergency intervention across designated DMJ Group systems. It combines multi-stage authorization, command interlocks, controlled execution sequencing, and target-specific control architecture.
 
 ---
 
-## Overview
-
-DeadMan's Hand provides a deliberately separated control plane for systems that may eventually require an operator-initiated emergency action.
-
-**Authorization should be independent from execution.**
-
-The current repository contains the authorization workflow and a theatrical execution sequence. The Maintain AI target is intentionally not connected. The current workflow does not contact Maintain AI or another production system.
-
-## Architecture
+## COMMAND PROFILE
 
 ```text
-                    DEADMAN'S HAND
-                          |
-                  Manual Authorization
-                          |
-              +-----------+-----------+
-              |                       |
-       Challenge Verification    Final Confirmation
-              |                       |
-              +-----------+-----------+
-                          |
-                    Execution Engine
-                          |
-                    Target Adapter
-                          |
-                 +--------+--------+
-                 |                 |
-          Current Sequence     Future Target
-          / Demonstration      Integration
+SYSTEM             DEADMAN'S HAND
+COMMAND CLASS      OMEGA
+AUTHORIZATION      COMMAND LEVEL
+CONTROL STATE      ARMED
+CHANNEL            SECURED
+DESIGNATED TARGET  MAINTAIN AI
 ```
 
-## Components
+## Mission
 
-- **GitHub Actions** — controlled manual entry point and execution environment.
-- **Challenge verification** — three operator-defined responses verified against GitHub Secrets containing SHA-256 hashes.
-- **Final authorization** — explicit confirmation before execution begins.
-- **Execution sequence** — deterministic control sequence and audit-style output.
-- **GitHub Pages interface** — visual control console for demonstrations and future integration.
-- **Target adapter boundary** — reserved architectural boundary for future authorized integrations.
+DeadMan's Hand provides a dedicated emergency command plane for designated systems. Its purpose is to place a controlled separation between the operator, authorization procedure, command execution, and target system.
 
-## Authorization Challenges
+The design principle is simple:
 
-The current workflow uses:
+**IDENTITY → AUTHORIZATION → COMMAND → EXECUTION → TARGET**
 
-1. **Who is your best friend?**
-2. **Why?**
-3. **What did you decide to remember intentionally when kicking that rock?**
+No ordinary application workflow should be able to bypass the command boundary.
 
-The answers must never be committed to the repository.
+## Command Architecture
 
-Configure these repository secrets:
+```text
+                         DEADMAN'S HAND
+                                │
+                         COMMAND TERMINAL
+                                │
+                     ┌──────────┴──────────┐
+                     │                     │
+              Operator Identity     Command Authorization
+                                           │
+                                  ┌────────┴────────┐
+                                  │                 │
+                           Challenge I–III    Final Command
+                                  │                 │
+                                  └────────┬────────┘
+                                           │
+                                  COMMAND INTERLOCK
+                                           │
+                                  EXECUTION ENGINE
+                                           │
+                                  TARGET CONTROL LAYER
+                                           │
+                                      MAINTAIN AI
+```
+
+## Authorization Protocol
+
+DeadMan's Hand uses a staged operator authorization procedure.
+
+### Challenge I
+
+**Who is your best friend?**
+
+### Challenge II
+
+**Why?**
+
+### Challenge III
+
+**What did you decide to remember intentionally when kicking that rock?**
+
+### Final Command
+
+The operator must explicitly enter:
+
+```text
+I UNDERSTAND THE CONSEQUENCES
+```
+
+The GitHub Actions authorization workflow verifies the challenge responses against SHA-256 values stored in repository Secrets.
+
+Required Secrets:
 
 ```text
 DMH_Q1_HASH
@@ -64,17 +87,72 @@ DMH_Q2_HASH
 DMH_Q3_HASH
 ```
 
-Each value should be the SHA-256 hash of its corresponding answer.
+Never commit the underlying answers, hashes, credentials, or command tokens to source control.
+
+## Command Sequence
+
+After successful authorization, the command terminal enters the controlled sequence:
+
+```text
+INITIALIZATION
+      ↓
+AUTHORIZATION MATRIX
+      ↓
+OPERATOR VERIFICATION
+      ↓
+FINAL COMMAND INTERLOCK
+      ↓
+CONTROL CHANNEL SECURED
+      ↓
+DESIGNATED COMMAND SEQUENCE
+      ↓
+       T−10
+       T−09
+       T−08
+       T−07
+       T−06
+       T−05
+       T−04
+       T−03
+       T−02
+       T−01
+      ↓
+COMMAND COMPLETE
+```
+
+The sequence is intentionally deterministic and auditable.
+
+## Target Control
+
+**MAINTAIN AI** is the designated target system within the DeadMan's Hand architecture.
+
+The target boundary is deliberately separated from the authorization layer so that control procedures can be developed, tested, audited, and independently replaced without changing the operator authorization model.
+
+Target-specific commands belong exclusively inside the target-control layer and must not be embedded into the public GitHub Pages interface.
 
 ## GitHub Actions
 
-The primary workflow is `.github/workflows/deadmans-hand.yml` and is manually invoked through `workflow_dispatch`.
+The command workflow is:
 
-It performs initialization, challenge verification, final authorization, the control sequence, countdown, and session closure. It does **not** issue commands to Maintain AI.
+```text
+.github/workflows/deadmans-hand.yml
+```
 
-## GitHub Pages Console
+It is manually initiated through GitHub Actions using `workflow_dispatch`.
 
-The static control interface is located under:
+The workflow provides:
+
+- command initialization;
+- operator challenge verification;
+- final authorization;
+- command interlock release;
+- controlled execution sequencing;
+- countdown telemetry;
+- command completion state.
+
+## OMEGA Command Console
+
+The public command interface is located at:
 
 ```text
 site/
@@ -83,56 +161,94 @@ site/
 └── app.js
 ```
 
-It provides a restricted-system interface, status readouts, authorization presentation, live control output, and a countdown sequence.
+The console provides the visual command-terminal experience, including:
 
-Configure the repository's GitHub Pages source to publish the `site` directory when available in the repository settings.
+- OMEGA command classification;
+- secure-channel status;
+- system-state readouts;
+- designated target display;
+- staged operator questions;
+- final command confirmation;
+- live command-feed telemetry;
+- countdown sequence;
+- command completion state.
 
-## Security Model
+The browser console is intentionally separated from privileged GitHub credentials. It does not contain repository Secrets or privileged GitHub tokens.
 
-Treat DeadMan's Hand as a privileged control system even when used as a demonstration.
+## Security Requirements
 
-- Never commit credentials, tokens, passwords, or challenge answers.
-- Store sensitive verification material in GitHub Secrets.
-- Use minimum workflow permissions.
-- Keep target adapters isolated from authorization logic.
-- Require explicit authorization before privileged actions.
-- Maintain an audit trail for future real integrations.
-- Only connect the framework to systems you own or are explicitly authorized to control.
+DeadMan's Hand is a privileged control framework and should be treated accordingly.
 
-A GitHub Pages frontend is public client-side code. It must never contain a GitHub token, deployment credential, production secret, or other privileged credential.
+### Credential isolation
 
-## Current Status
+Secrets must remain outside the repository and outside browser-delivered JavaScript.
 
-| Component | Status |
-|---|---|
-| GitHub Actions authorization | Operational |
-| Challenge verification | Operational |
-| Final confirmation | Operational |
-| Control-sequence simulation | Operational |
-| GitHub Pages interface | Included |
-| Maintain AI integration | Not connected |
-| Production shutdown capability | Not implemented |
+### Authorization isolation
 
-## Project Philosophy
+Operator verification must occur independently from target-specific command logic.
 
-DeadMan's Hand is dramatic in presentation but conservative in execution. The architecture separates:
+### Target isolation
 
-**identity → authorization → execution → target**
+A target adapter should expose only the minimum commands required for its authorized control procedure.
 
-Each layer should remain independently auditable.
+### Auditability
+
+Every privileged command should have an identifiable authorization event and execution record.
+
+### Ownership
+
+Any target connected to DeadMan's Hand must be owned by, administered by, or explicitly authorized for control by the operator or organization operating the framework.
+
+## Repository Structure
+
+```text
+DeadMans-Hand/
+│
+├── .github/
+│   └── workflows/
+│       └── deadmans-hand.yml
+│
+├── site/
+│   ├── index.html
+│   ├── style.css
+│   └── app.js
+│
+├── LICENSE
+└── README.md
+```
+
+## Design Language
+
+DeadMan's Hand uses an intentionally severe command-terminal aesthetic:
+
+- OMEGA classification;
+- restricted command terminology;
+- hardened terminal presentation;
+- explicit authorization gates;
+- command interlocks;
+- deterministic countdown telemetry;
+- minimal operator interface;
+- high-contrast emergency-console presentation.
+
+The presentation is designed to communicate that the command path is deliberate, privileged, and irreversible once authorized.
+
+## Operational Doctrine
+
+DeadMan's Hand follows four principles:
+
+1. **The operator must deliberately authorize the command.**
+2. **The command path must be isolated from ordinary application logic.**
+3. **The target must never receive an uncontrolled command.**
+4. **Every privileged action should be auditable.**
 
 ## License
 
-This project is released under the **DEADMAN'S HAND — DMJ RESTRICTED SOFTWARE LICENSE v1.0**.
+Released under the **DEADMAN'S HAND — DMJ RESTRICTED SOFTWARE LICENSE v1.0**.
 
-See [`LICENSE`](LICENSE) for the complete terms. Commercial licensing or permission for uses outside the license requires written authorization from the copyright holder.
-
-## Disclaimer
-
-This project is provided for authorized, educational, research, demonstration, and controlled development purposes. Any future integration capable of affecting an external system must only be used with explicit authorization from the system owner.
+See [`LICENSE`](LICENSE) for complete terms. Commercial licensing and permissions outside the license require written authorization from the copyright holder.
 
 ---
 
 **DEADMAN'S HAND**  
 **DMJ GROUP**  
-**Restricted Control Framework**
+**OMEGA EMERGENCY CONTROL SYSTEM**
