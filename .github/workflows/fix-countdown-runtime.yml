@@ -1,0 +1,46 @@
+name: Fix Countdown Runtime
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch runtime crash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          # The previous cinematic patch calls these helpers but did not define them.
+          # Define them as mutually-exclusive flash/shake primitives.
+          needle="function flashNow(white=true){"
+          helpers="function whiteHit(){flash.classList.remove('on');whiteFlash.classList.remove('on');void whiteFlash.offsetWidth;whiteFlash.classList.add('on')}function panicShake(ms=180){document.body.classList.add('panicMode');setTimeout(()=>document.body.classList.remove('panicMode'),ms)}"
+          if needle in s and 'function whiteHit(){' not in s:
+              s=s.replace(needle,helpers+needle,1)
+
+          # Ensure flashNow never references a missing whiteFlash node.
+          s=s.replace("function flashNow(white=true){flash.classList.remove('on');void flash.offsetWidth;flash.classList.add('on');if(white&&Math.random()>.22){whiteFlash.classList.remove('on');void whiteFlash.offsetWidth;whiteFlash.classList.add('on')}}", "function flashNow(){flash.classList.remove('on');void flash.offsetWidth;flash.classList.add('on')}")
+
+          # Remove duplicate whiteFlash DOM element, retaining the first.
+          marker='<div class="whiteFlash" id="whiteFlash"></div>'
+          first=s.find(marker)
+          if first>=0:
+              second=s.find(marker,first+len(marker))
+              if second>=0:s=s[:second]+s[second+len(marker):]
+
+          # Repair the missing separator after the final countdown effects.
+          s=s.replace("rumble(2.8,.3)count.classList.remove('dangerCount')","rumble(2.8,.3);count.classList.remove('dangerCount')")
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Fix countdown runtime crash'
+          git push
