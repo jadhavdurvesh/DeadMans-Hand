@@ -1,0 +1,46 @@
+name: Repair Authorization Button
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-button-now.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair current index.html without replacing the design
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Repair the missing statement separator that prevents the entire script from parsing.
+          s = s.replace('rumble(2.8,.3)count.classList.remove', 'rumble(2.8,.3);count.classList.remove')
+          s = s.replace('rumble(2.8,.3)count.classList.remove', 'rumble(2.8,.3);count.classList.remove')
+
+          # Remove accidental duplicate white-flash DOM node while preserving the first one.
+          marker = '<div class="whiteFlash" id="whiteFlash"></div>'
+          first = s.find(marker)
+          if first >= 0:
+              second = s.find(marker, first + len(marker))
+              if second >= 0:
+                  s = s[:second] + s[second + len(marker):]
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'No repair required.'
+          else
+            git commit -m 'Fix authorization button JavaScript'
+            git push
+          fi
