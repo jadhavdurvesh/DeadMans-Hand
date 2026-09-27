@@ -1,0 +1,57 @@
+name: Fix T12 Countdown Runtime
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-t12-definitive.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair countdown dependencies
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # The T-12 crash occurs because flashNow() references whiteFlash,
+          # while the const declaration only captures flash. Add the element reference.
+          old = "const $=id=>document.getElementById(id);const start=$('start'),modal=$('modal'),question=$('question'),answer=$('answer'),qtitle=$('qtitle'),next=$('next'),cancel=$('cancel'),terminal=$('terminal'),log=$('log'),count=$('count'),progress=$('progress'),planet=$('planet'),clock=$('clock'),flash=$('flash'),impact="
+          new = "const $=id=>document.getElementById(id);const start=$('start'),modal=$('modal'),question=$('question'),answer=$('answer'),qtitle=$('qtitle'),next=$('next'),cancel=$('cancel'),terminal=$('terminal'),log=$('log'),count=$('count'),progress=$('progress'),planet=$('planet'),clock=$('clock'),flash=$('flash'),whiteFlash=$('whiteFlash'),impact="
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif "flash=$('flash'),whiteFlash=$('whiteFlash')" not in s:
+              raise SystemExit('Could not locate DOM reference declaration')
+
+          # The countdown calls panicShake(), but the current page does not define it.
+          marker = "function shake(strong=false){"
+          if "function panicShake(" not in s:
+              s = s.replace(marker, "function panicShake(ms=180){document.body.classList.add('panicMode');setTimeout(()=>document.body.classList.remove('panicMode'),ms)}" + marker, 1)
+
+          # Make the two flash effects independent. A red hit fully ends before a white hit begins.
+          old_fn = "function flashNow(white=true){flash.classList.remove('on');void flash.offsetWidth;flash.classList.add('on');if(white&&Math.random()>.22){whiteFlash.classList.remove('on');void whiteFlash.offsetWidth;whiteFlash.classList.add('on')}}"
+          new_fn = "function redHit(){whiteFlash.classList.remove('on');flash.classList.remove('on');void flash.offsetWidth;flash.classList.add('on')}function whiteHit(){flash.classList.remove('on');whiteFlash.classList.remove('on');void whiteFlash.offsetWidth;whiteFlash.classList.add('on')}function flashNow(){redHit()}"
+          if old_fn in s:
+              s = s.replace(old_fn, new_fn, 1)
+          elif "function redHit()" not in s:
+              raise SystemExit('Could not locate flash function')
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'No changes required.'
+          else
+            git commit -m 'Fix T-12 countdown crash'
+            git push
+          fi
