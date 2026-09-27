@@ -4,15 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       challenge_1:
-        description: 'Authorization Challenge I'
+        description: 'Who is your best friend?'
         required: true
         type: string
       challenge_2:
-        description: 'Authorization Challenge II'
+        description: 'Why?'
         required: true
         type: string
       challenge_3:
-        description: 'Authorization Challenge III'
+        description: 'What did you decide to remember intentionally when kicking that rock?'
         required: true
         type: string
       final_confirmation:
@@ -50,23 +50,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           verify() {
-            local supplied="$1"
-            local expected="$2"
-            local actual
+            local supplied="$1" expected="$2" actual
             actual="$(printf '%s' "$supplied" | sha256sum | cut -d ' ' -f1)"
             [[ -n "$expected" && "$actual" == "$expected" ]]
           }
-
           echo '[DMH-027] Verifying authorization challenge I...'
           verify '${{ inputs.challenge_1 }}' "$Q1_HASH"
           echo '[DMH-028] Challenge I accepted.'
-
           echo '[DMH-031] Verifying authorization challenge II...'
           verify '${{ inputs.challenge_2 }}' "$Q2_HASH"
           echo '[DMH-032] Challenge II accepted.'
-
           echo '[DMH-035] Verifying authorization challenge III...'
           verify '${{ inputs.challenge_3 }}' "$Q3_HASH"
           echo '[DMH-036] Challenge III accepted.'
@@ -87,14 +81,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo ''
           echo '############################################################'
-          echo '#                                                          #'
           echo "#                 DEADMAN'S HAND                         #"
           echo '#                 AUTHORIZED                              #'
-          echo '#                                                          #'
           echo '############################################################'
-          echo ''
           echo '[DMH-060] Preparing execution sequence................ OK'
           sleep 1
           echo '[DMH-061] Establishing control channel................ OK'
@@ -103,16 +93,9 @@ jobs:
           sleep 1
           echo '[DMH-063] Final interlock.............................. OK'
           sleep 1
-          for n in 10 9 8 7 6 5 4 3 2 1; do
-            echo "                     T - $n"
-            sleep 1
-          done
-          echo ''
+          for n in 10 9 8 7 6 5 4 3 2 1; do echo "                     T - $n"; sleep 1; done
           echo '[DMH-099] EXECUTION SEQUENCE COMPLETE.'
           echo '[DMH-100] Control sequence terminated.'
-          echo ''
           echo '============================================================'
           echo " DEADMAN'S HAND // SESSION COMPLETE"
           echo '============================================================'
-          echo '[DMH-101] Maintain AI control channel: READY FOR FUTURE LINK.'
-          echo '[DMH-102] No external target command issued by this workflow.'
