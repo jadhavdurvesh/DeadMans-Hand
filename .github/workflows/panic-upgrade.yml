@@ -1,0 +1,54 @@
+name: Panic Countdown Cinematic Upgrade
+
+on:
+  push:
+    paths-ignore:
+      - '.github/workflows/panic-upgrade.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upgrade countdown pacing, flashes, shake and audio
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Add a second, white cinematic flash layer without removing the red one.
+          s = s.replace('<div class="flash" id="flash"></div>', '<div class="flash" id="flash"></div><div class="whiteFlash" id="whiteFlash"></div>')
+          s = s.replace('.flash{z-index:100;background:#ff1028;opacity:0;mix-blend-mode:screen}.flash.on{animation:flash .22s}', '.flash{z-index:100;background:#ff1028;opacity:0;mix-blend-mode:screen}.flash.on{animation:flash .22s}.whiteFlash{position:fixed;inset:0;z-index:101;background:#fff;opacity:0;pointer-events:none;mix-blend-mode:screen}.whiteFlash.on{animation:whiteFlash .11s}.panicMode{animation:panicShake .12s infinite!important}')
+          s = s.replace('@keyframes flash{0%{opacity:.8}18%{opacity:.9}100%{opacity:0}}', '@keyframes flash{0%{opacity:.8}18%{opacity:.9}100%{opacity:0}}@keyframes whiteFlash{0%{opacity:.95}22%{opacity:.55}100%{opacity:0}}@keyframes panicShake{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(3px,-2px) rotate(.15deg)}50%{transform:translate(-4px,2px) rotate(-.12deg)}75%{transform:translate(2px,3px) rotate(.1deg)}}')
+
+          s = s.replace("const flash=$('flash'),impact=", "const flash=$('flash'),whiteFlash=$('whiteFlash'),impact=")
+          s = s.replace("function flashNow(){flash.classList.remove('on');void flash.offsetWidth;flash.classList.add('on')}", "function flashNow(white=true){flash.classList.remove('on');void flash.offsetWidth;flash.classList.add('on');if(white&&Math.random()>.22){whiteFlash.classList.remove('on');void whiteFlash.offsetWidth;whiteFlash.classList.add('on')}}")
+          s = s.replace("function shake(){document.body.classList.add('shock');setTimeout(()=>document.body.classList.remove('shock'),300)}", "function shake(strong=false){document.body.classList.add('shock');if(strong)document.body.classList.add('panicMode');setTimeout(()=>document.body.classList.remove('shock'),strong?420:300);if(strong)setTimeout(()=>document.body.classList.remove('panicMode'),420)}")
+
+          # Replace the slow 12 x 900ms countdown with an accelerating panic sequence.
+          old = "for(let n=12;n>=1;n--){count.textContent='T - '+String(n).padStart(2,'0');progress.style.width=((12-n)/11*100)+'%';planet.textContent=n>8?'DETERIORATING':n>4?'CATASTROPHIC':'TERMINAL';siren();tone(260+(12-n)*32,.32,'sine',.065);if(n<=6)rumble(.5,.12);if(n<=3){flashNow();tone(55,.28,'sawtooth',.14);shake()}else if(n%2===0){flashNow()}await sleep(900)}"
+          new = "let panicDelay=760;for(let n=12;n>=1;n--){count.textContent='T - '+String(n).padStart(2,'0');progress.style.width=((12-n)/11*100)+'%';planet.textContent=n>9?'DETERIORATING':n>6?'CRITICAL':n>3?'CATASTROPHIC':'TERMINAL';const urgency=(13-n)/12;siren();tone(300+urgency*420,Math.max(.11,panicDelay/1800),'sine',.075+urgency*.055);rumble(Math.max(.18,panicDelay/900),.09+urgency*.16);flashNow(true);shake(n<=9);if(n<=8){tone(70,Math.max(.12,panicDelay/1600),'sawtooth',.10+urgency*.10);if(n%2===0)flashNow(true)}if(n<=5){tone(42,.22,'sawtooth',.16);shake(true);flashNow(true)}if(n<=3){tone(31,.28,'sine',.20);shake(true);flashNow(true);await sleep(80)}await sleep(panicDelay);panicDelay=Math.max(260,panicDelay-48)}"
+          if old not in s:
+              raise SystemExit('countdown block not found')
+          s = s.replace(old, new)
+
+          # Make the command-complete transition abrupt instead of lingering.
+          s = s.replace("await sleep(2500);impact.classList.remove('hidden');", "await sleep(650);flashNow(true);shake(true);tone(28,.5,'sine',.22);impact.classList.remove('hidden');")
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit cinematic upgrade
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'No changes needed.'
+          else
+            git commit -m 'Make countdown feel urgent and chaotic'
+            git push
+          fi
